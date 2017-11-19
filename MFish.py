@@ -18,8 +18,6 @@ interval = 0.005
 buy_down_interval = 0.003
 profit_interval = 0.005
 straddle = profit_interval + buy_down_interval
-buy_count = 0
-sell_count = 0
 running = True
 og = Order.OrderIdentifer()
 ob = Order.Orderbook()
@@ -57,7 +55,6 @@ for b in bids:
 buy_price = float(bids[scrum][0])
 buy_order = Order.Order(og.next_id(), Order.Ordertype.OB, buy_price, qty)
 ob.add_order(buy_order)
-buy_count += 1
 
 output_to_log("Asks:")
 
@@ -68,7 +65,6 @@ for a in asks:
 sell_price = float(asks[scrum][0])
 sell_order = Order.Order(og.next_id(), Order.Ordertype.OS, sell_price, qty)
 ob.add_order(sell_order)
-sell_count += 1
 
 
 def get_orders():
@@ -77,9 +73,6 @@ def get_orders():
 
 
 def check_orders():
-
-    global buy_count
-    global sell_count
 
     output_to_log("Checking order statuses.")
 
@@ -106,9 +99,6 @@ def check_orders():
 
 def order_event_handler(price):
 
-    global buy_count
-    global sell_count
-
     output_to_log("Handling order events.")
 
     for o in ob.orders:
@@ -131,15 +121,13 @@ def order_event_handler(price):
 
                 output_to_log("Placing BUY at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * buy_count)), qty))
-                buy_count += 1
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * ob.buy_count)), qty))
 
                 # place sell at profit interval
 
                 output_to_log("Placing SELL at profit interval.")
 
                 ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price + (price * profit_interval), qty))
-                sell_count += 1
 
                 get_orders()
 
@@ -159,15 +147,13 @@ def order_event_handler(price):
 
                 output_to_log("Placing SELL at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * sell_count)), qty))
-                sell_count += 1
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * ob.sell_count)), qty))
 
                 # place buy at profit interval
 
                 output_to_log("Placing BUY at profit interval.")
 
                 ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
-                buy_count += 1
 
                 get_orders()
 
@@ -177,15 +163,13 @@ def order_event_handler(price):
 
                 output_to_log("Placing BUY at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * buy_count)), qty))
-                buy_count += 1
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * ob.buy_count)), qty))
 
                 # place sell at profit interval
 
                 output_to_log("Placing SELL at profit interval.")
 
                 ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price + (price * profit_interval), qty))
-                sell_count += 1
 
                 get_orders()
 
@@ -195,36 +179,21 @@ def order_event_handler(price):
 
                 output_to_log("Placing SELL at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * sell_count)), qty))
-                sell_count += 1
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * ob.sell_count)), qty))
 
                 # place buy at profit interval
 
                 output_to_log("Placing BUY at profit interval.")
 
                 ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
-                buy_count += 1
 
                 get_orders()
 
 
 def clean_order_book():
 
-    global buy_count
-    global sell_count
-
-    output_to_log("Cleaning order book.")
-
-    for o in ob.orders:
-
-        if o.status == 'EXECUTED' or o.status == 'CANCELLED':
-
-            if o.type == Order.Ordertype.OB or o.type == Order.Ordertype.BDI or o.type == Order.Ordertype.BPI:
-                buy_count -= 1
-            elif o.type == Order.Ordertype.OS or o.type == Order.Ordertype.SDI or o.type == Order.Ordertype.SPI:
-                sell_count -= 1
-
-            ob.remove_order(o)
+    ob.remove_cancelled_orders()
+    ob.remove_executed_orders()
 
 # Stage 2 - main loop
 
