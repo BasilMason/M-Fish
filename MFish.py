@@ -6,8 +6,10 @@ import Order
 # setup output file
 t = int(time.time())
 d = datetime.datetime.today().strftime('%Y-%m-%d')
-p = "Logs\Fishlog-%s-%s.txt" % (d,t)
-f = open(p,'w')
+action_log = "Logs\Actionlog-%s-%s.txt" % (d,t)
+data_log = "Logs\Datalog-%s-%s.txt" % (d,t)
+fa = open(action_log,'w')
+fd = open(data_log,'w')
 
 # bot config
 pair = 'btcusd'
@@ -27,8 +29,14 @@ last_order = ''
 
 def output_to_log(s):
     print(s)
-    f = open(p, 'a')
+    f = open(action_log, 'a')
     f.write(">> %s\n" % s)
+    f.close()
+
+
+def output_data(s):
+    f = open(data_log, 'a')
+    f.write("%s\n" % s)
     f.close()
 
 
@@ -41,9 +49,13 @@ intro = '-----------------------------------------------------------------------
         '*                            // ///  /,,/,/, ///, //, // ,/, //, ///, // ,/*\n'\
         '*--------------PREDICT RAIN. , // ,/, //, ///, // ,/// ///  /,,/,/, ///, //*\n'
 
-f.write("%s\n" % intro)
-f.write("Log generated on %s at %s\n" % (d,time.strftime('%H:%M:%S', time.localtime())))
-f.close()
+fa.write("%s\n" % intro)
+fa.write("Action Log generated on %s at %s\n" % (d,time.strftime('%H:%M:%S', time.localtime())))
+fa.close()
+
+fd.write("%s\n" % intro)
+fd.write("Data Log generated on %s at %s\n" % (d,time.strftime('%H:%M:%S', time.localtime())))
+fd.close()
 
 # Stage 1 - opening orders
 
@@ -76,13 +88,23 @@ def get_orders():
 
 def check_orders():
 
+    log = ''
+
     output_to_log("Checking order statuses.")
 
     price = float(Bitstamp.get_price(pair))
 
+    log += "%.4f" % price
+    log += ','
+
     output_to_log("Current price:\t%.4f" % price)
 
     for o in ob.orders:
+
+        log += str(o.id)
+        log += ';'
+        log += "%.4f" % o.price
+        log += ','
 
         if o.type == Order.Ordertype.OB or o.type == Order.Ordertype.BDI or o.type == Order.Ordertype.BPI:
 
@@ -95,6 +117,8 @@ def check_orders():
             if price >= o.price:
                 o.status = 'EXECUTED'
                 output_to_log(str(o))
+
+    output_data(log)
 
     return price
 
