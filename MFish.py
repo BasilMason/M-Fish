@@ -21,6 +21,8 @@ straddle = profit_interval + buy_down_interval
 running = True
 og = Order.OrderIdentifer()
 ob = Order.Orderbook()
+order_depth = 0
+last_order = ''
 
 
 def output_to_log(s):
@@ -99,6 +101,9 @@ def check_orders():
 
 def order_event_handler(price):
 
+    global order_depth
+    global last_order
+
     output_to_log("Handling order events.")
 
     for o in ob.orders:
@@ -106,6 +111,9 @@ def order_event_handler(price):
         if o.status == 'EXECUTED':
 
             if o.type == Order.Ordertype.OB:
+
+                order_depth += 1
+                last_order = 'BUY'
 
                 # cancel opening sell, no longer required.
 
@@ -121,7 +129,7 @@ def order_event_handler(price):
 
                 output_to_log("Placing BUY at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * ob.buy_count)), qty))
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
                 # place sell at profit interval
 
@@ -132,6 +140,9 @@ def order_event_handler(price):
                 get_orders()
 
             elif o.type == Order.Ordertype.OS:
+
+                order_depth += 1
+                last_order = 'SELL'
 
                 # cancel opening buy, no longer required.
 
@@ -147,7 +158,7 @@ def order_event_handler(price):
 
                 output_to_log("Placing SELL at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * ob.sell_count)), qty))
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
                 # place buy at profit interval
 
@@ -159,11 +170,18 @@ def order_event_handler(price):
 
             elif o.type == Order.Ordertype.BDI:
 
+                if last_order == 'BUY':
+                    order_depth += 1
+                elif last_order == 'SELL':
+                    order_depth -= 1
+
+                last_order = 'BUY'
+
                 # place buy down interval order
 
                 output_to_log("Placing BUY at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * ob.buy_count)), qty))
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
                 # place sell at profit interval
 
@@ -175,11 +193,18 @@ def order_event_handler(price):
 
             elif o.type == Order.Ordertype.SDI:
 
+                if last_order == 'SELL':
+                    order_depth += 1
+                elif last_order == 'BUY':
+                    order_depth -= 1
+
+                last_order = 'SELL'
+
                 # place sell down interval order
 
                 output_to_log("Placing SELL at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * ob.sell_count)), qty))
+                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
                 # place buy at profit interval
 
@@ -188,6 +213,72 @@ def order_event_handler(price):
                 ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
                 get_orders()
+
+            elif o.type == Order.Ordertype.BPI:
+
+                last_order = 'BUY'
+
+                if order_depth == 1:
+
+                    # place buy down interval order
+
+                    output_to_log("Placing BUY at down interval.")
+
+                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
+
+                    # place sell at profit interval
+
+                    output_to_log("Placing SELL at profit interval.")
+
+                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price + (price * profit_interval), qty))
+
+                    get_orders()
+
+                elif order_depth > 1:
+
+                    # previous buy exists
+
+                    # cancel outer SDI with SPI
+
+                    ob.orders[-1].status = 'CANCELLED'
+
+                    output_to_log("Cancelling outer SDI.")
+                    output_to_log("Placing SELL at profit interval.")
+
+                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price - (price * profit_interval), qty))
+
+            elif o.type == Order.Ordertype.SPI:
+
+                last_order = 'SELL'
+
+                if order_depth == 1:
+
+                    # place sell down interval order
+
+                    output_to_log("Placing SELL at down interval.")
+
+                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
+
+                    # place buy at profit interval
+
+                    output_to_log("Placing BUY at profit interval.")
+
+                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
+
+                    get_orders()
+
+                elif order_depth > 1:
+
+                    # previous sell exists
+
+                    # cancel outer BDI with BPI
+
+                    ob.orders[-1].status = 'CANCELLED'
+
+                    output_to_log("Cancelling outer BDI.")
+                    output_to_log("Placing BUY at profit interval.")
+
+                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
 
 def clean_order_book():
