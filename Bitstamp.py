@@ -1,18 +1,19 @@
-import urllib.parse
-import urllib.request
-import json
 import hmac
 import hashlib
 import time
 
+import settings
+
+import requests
+
+
 # authentication
-customer_id = 'XXX'
-api_key = 'XXX'
-api_secret = 'XXX'
+customer_id = settings.BITSTAMP_CUSTOMER_ID
+api_key = settings.BITSTAMP_API_KEY
+api_secret = settings.BITSTAMP_API_SECRET
 nonce = int(time.time())
 
 def generate_signature():
-
     message = str(nonce).encode() + customer_id.encode() + api_key.encode()
     signature = hmac.new(
         api_secret.encode(),
@@ -72,25 +73,15 @@ def values_order_limit(amount, price, limit_price):
 
 
 def get_url(url):
-
-    data = ''
-    with urllib.request.urlopen(url) as response:
-        data = json.loads(response.read().decode())
+    data = requests.get(url).json()
 
     return data
 
 
 def post_url(url, values):
+    data = requests.get(url, params=values).json()
 
-    ret = ''
-    data = urllib.parse.urlencode(values)
-    data = data.encode('ascii')
-    req = urllib.request.Request(url, data)
-
-    with urllib.request.urlopen(req) as response:
-        ret = json.loads(response.read().decode())
-
-    return ret
+    return data
 
 
 def show_bids(pair, qty):

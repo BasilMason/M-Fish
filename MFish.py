@@ -21,7 +21,6 @@ buy_down_interval = 0.003
 profit_interval = 0.005
 straddle = profit_interval + buy_down_interval
 running = True
-og = Order.OrderIdentifer()
 ob = Order.Orderbook()
 order_depth = 0
 last_order = ''
@@ -68,7 +67,7 @@ for b in bids:
     output_to_log("\t\tbids: %s, amount: %s" % (b[0], b[1]))
 
 buy_price = float(bids[scrum][0])
-buy_order = Order.Order(og.next_id(), Order.Ordertype.OB, buy_price, qty)
+buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
 ob.add_order(buy_order)
 
 output_to_log("Asks:")
@@ -78,7 +77,7 @@ for a in asks:
     output_to_log("\t\tasks: %s, amount: %s" % (a[0], a[1]))
 
 sell_price = float(asks[scrum][0])
-sell_order = Order.Order(og.next_id(), Order.Ordertype.OS, sell_price, qty)
+sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
 ob.add_order(sell_order)
 
 
@@ -115,14 +114,12 @@ def check_orders():
         if o.type == Order.Ordertype.OB or o.type == Order.Ordertype.BDI or o.type == Order.Ordertype.BPI:
 
             if current_price <= o.price:
-                o.status = 'EXECUTED'
-                output_to_log(str(o))
+                o.execute()
 
         elif o.type == Order.Ordertype.OS or o.type == Order.Ordertype.SDI or o.type == Order.Ordertype.SPI:
 
             if current_price >= o.price:
-                o.status = 'EXECUTED'
-                output_to_log(str(o))
+                o.execute()
 
     output_data(log)
 
@@ -153,7 +150,7 @@ def order_event_handler(price):
 
                     if oo.type == Order.Ordertype.OS:
 
-                        oo.status = 'CANCELLED'
+                        oo.cancel()
 
                 # place buy down interval order
 
@@ -182,7 +179,7 @@ def order_event_handler(price):
 
                     if oo.type == Order.Ordertype.OB:
 
-                        oo.status = 'CANCELLED'
+                        oo.cancel()
 
                 # place sell down interval order
 
@@ -270,7 +267,7 @@ def order_event_handler(price):
 
                     # cancel outer SDI with SPI
 
-                    ob.orders[-1].status = 'CANCELLED'
+                    ob.orders[-1].cancel()
 
                     output_to_log("Cancelling outer SDI.")
                     output_to_log("Placing SELL at profit interval.")
@@ -303,7 +300,7 @@ def order_event_handler(price):
 
                     # cancel outer BDI with BPI
 
-                    ob.orders[-1].status = 'CANCELLED'
+                    ob.orders[-1].cancel()
 
                     output_to_log("Cancelling outer BDI.")
                     output_to_log("Placing BUY at profit interval.")
