@@ -27,6 +27,8 @@ last_order = ''
 last_price = 0.00
 current_price = 0.00
 
+bitstamp = Bitstamp.BitstampService()
+
 def output_to_log(s):
     print(s)
     f = open(action_log, 'a')
@@ -62,7 +64,7 @@ fd.close()
 output_to_log("Placing opening orders\n")
 output_to_log("Bids:")
 
-bids = Bitstamp.get_bids(pair, depth)
+bids = bitstamp.get_bids(pair, depth)
 for b in bids:
     output_to_log("\t\tbids: %s, amount: %s" % (b[0], b[1]))
 
@@ -72,7 +74,7 @@ ob.add_order(buy_order)
 
 output_to_log("Asks:")
 
-asks = Bitstamp.get_asks(pair, depth)
+asks = bitstamp.get_asks(pair, depth)
 for a in asks:
     output_to_log("\t\tasks: %s, amount: %s" % (a[0], a[1]))
 
@@ -96,7 +98,7 @@ def check_orders():
     #output_to_log("Checking order statuses.")
 
     last_price = current_price
-    current_price = float(Bitstamp.get_price(pair))
+    current_price = bitstamp.get_price(pair)
 
     log += "%.4f" % current_price
     log += ','

@@ -7,6 +7,30 @@ import settings
 import requests
 
 
+
+class BitstampService:
+    def _url_order_book(self, pair):
+        return 'https://www.bitstamp.net/api/v2/order_book/' + pair + '/'
+
+    def _url_price(self, pair):
+        return 'https://www.bitstamp.net/api/v2/ticker/' + pair + '/'
+
+    def get_bids(self, pair, depth):
+        url = self._url_order_book(pair)
+        resp = requests.get(url).json()
+        return resp['bids'][:depth]
+
+    def get_asks(self, pair, depth):
+        url = self._url_order_book(pair)
+        resp = requests.get(url).json()
+        return resp['asks'][:depth]
+
+    def get_price(self, pair):
+        url = self._url_price(pair)
+        resp = requests.get(url).json()
+        return float(resp['last'])
+
+
 # authentication
 customer_id = settings.BITSTAMP_CUSTOMER_ID
 api_key = settings.BITSTAMP_API_KEY
@@ -35,12 +59,8 @@ pairs = ['btcusd', 'btceur', 'eurusd', 'xrpusd', 'xrpeur', 'xrpbtc', 'ltcusd'
 url_trading_pairs = 'https://www.bitstamp.net/api/v2/trading-pairs-info/'
 
 
-def url_order_book(pair):
-    return 'https://www.bitstamp.net/api/v2/order_book/' + pair + '/'
 
 
-def url_price(pair):
-    return 'https://www.bitstamp.net/api/v2/ticker/' + pair + '/'
 
 # post urls
 url_balance_all = 'https://www.bitstamp.net/api/v2/balance/'
@@ -100,16 +120,9 @@ def show_asks(pair, qty):
         print("ask: %s, amount: %s" % (a[0], a[1]))
 
 
-def get_bids(pair, qty):
-    url = url_order_book(pair)
-    resp = get_url(url)
-    return resp['bids'][:qty]
 
 
-def get_asks(pair, qty):
-    url = url_order_book(pair)
-    resp = get_url(url)
-    return resp['asks'][:qty]
+
 
 
 def place_order():
@@ -142,10 +155,6 @@ def get_order_status(order_id):
         print("Status: %s" % (order['status']))
 
 
-def get_price(pair):
-    url = url_price(pair)
-    resp = get_url(url)
-    return resp['last']
 
 
 def get_price_all(pair):
