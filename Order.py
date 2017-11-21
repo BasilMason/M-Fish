@@ -108,7 +108,7 @@ class Orderbook:
                     self.buy_count -= 1
                 elif o.type == Ordertype.OS or o.type == Ordertype.SDI or o.type == Ordertype.SPI:
                     self.sell_count -= 1
-p
+
         self.orders = [o for o in self.orders if not o.status == OrderStatus.EXECUTED]
 
 

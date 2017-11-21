@@ -156,13 +156,13 @@ def order_event_handler(price):
 
                 output_to_log("Placing BUY at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
+                ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
                 # place sell at profit interval
 
                 output_to_log("Placing SELL at profit interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price + (price * profit_interval), qty))
+                ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
 
                 get_orders()
 
@@ -185,13 +185,13 @@ def order_event_handler(price):
 
                 output_to_log("Placing SELL at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
+                ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
                 # place buy at profit interval
 
                 output_to_log("Placing BUY at profit interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
+                ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
                 get_orders()
 
@@ -208,13 +208,13 @@ def order_event_handler(price):
 
                 output_to_log("Placing BUY at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
+                ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
                 # place sell at profit interval
 
                 output_to_log("Placing SELL at profit interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price + (price * profit_interval), qty))
+                ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
 
                 get_orders()
 
@@ -231,13 +231,13 @@ def order_event_handler(price):
 
                 output_to_log("Placing SELL at down interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
+                ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
                 # place buy at profit interval
 
                 output_to_log("Placing BUY at profit interval.")
 
-                ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
+                ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
                 get_orders()
 
@@ -251,13 +251,13 @@ def order_event_handler(price):
 
                     output_to_log("Placing BUY at down interval.")
 
-                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
                     # place sell at profit interval
 
                     output_to_log("Placing SELL at profit interval.")
 
-                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price + (price * profit_interval), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
 
                     get_orders()
 
@@ -272,7 +272,7 @@ def order_event_handler(price):
                     output_to_log("Cancelling outer SDI.")
                     output_to_log("Placing SELL at profit interval.")
 
-                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SPI, price - (price * profit_interval), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.SPI, price - (price * profit_interval), qty))
 
             elif o.type == Order.Ordertype.SPI:
 
@@ -284,13 +284,13 @@ def order_event_handler(price):
 
                     output_to_log("Placing SELL at down interval.")
 
-                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
                     # place buy at profit interval
 
                     output_to_log("Placing BUY at profit interval.")
 
-                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
                     get_orders()
 
@@ -305,7 +305,7 @@ def order_event_handler(price):
                     output_to_log("Cancelling outer BDI.")
                     output_to_log("Placing BUY at profit interval.")
 
-                    ob.add_order(Order.Order(og.next_id(), Order.Ordertype.BPI, price - (price * profit_interval), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
 
 def clean_order_book():
