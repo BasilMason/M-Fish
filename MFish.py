@@ -25,7 +25,8 @@ og = Order.OrderIdentifer()
 ob = Order.Orderbook()
 order_depth = 0
 last_order = ''
-
+last_price = 0.00
+current_price = 0.00
 
 def output_to_log(s):
     print(s)
@@ -88,16 +89,21 @@ def get_orders():
 
 def check_orders():
 
+    global last_price
+    global current_price
+
     log = ''
 
-    output_to_log("Checking order statuses.")
+    #output_to_log("Checking order statuses.")
 
-    price = float(Bitstamp.get_price(pair))
+    last_price = current_price
+    current_price = float(Bitstamp.get_price(pair))
 
-    log += "%.4f" % price
+    log += "%.4f" % current_price
     log += ','
 
-    output_to_log("Current price:\t%.4f" % price)
+    if current_price != last_price:
+        output_to_log("Current price:\t%.4f" % current_price)
 
     for o in ob.orders:
 
@@ -108,19 +114,19 @@ def check_orders():
 
         if o.type == Order.Ordertype.OB or o.type == Order.Ordertype.BDI or o.type == Order.Ordertype.BPI:
 
-            if price <= o.price:
+            if current_price <= o.price:
                 o.status = 'EXECUTED'
                 output_to_log(str(o))
 
         elif o.type == Order.Ordertype.OS or o.type == Order.Ordertype.SDI or o.type == Order.Ordertype.SPI:
 
-            if price >= o.price:
+            if current_price >= o.price:
                 o.status = 'EXECUTED'
                 output_to_log(str(o))
 
     output_data(log)
 
-    return price
+    return current_price
 
 
 def order_event_handler(price):
@@ -128,7 +134,7 @@ def order_event_handler(price):
     global order_depth
     global last_order
 
-    output_to_log("Handling order events.")
+    #output_to_log("Handling order events.")
 
     for o in ob.orders:
 
