@@ -137,7 +137,7 @@ def order_event_handler(price):
 
     for o in ob.orders:
 
-        if o.status == 'EXECUTED':
+        if o.status == Order.OrderStatus.EXECUTED:
 
             if o.type == Order.Ordertype.OB:
 
