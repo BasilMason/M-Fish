@@ -142,7 +142,7 @@ def order_event_handler(price):
             if o.type == Order.Ordertype.OB:
 
                 order_depth += 1
-                last_order = 'BUY'
+                last_order = 'OB'
 
                 # cancel opening sell, no longer required.
 
@@ -171,7 +171,7 @@ def order_event_handler(price):
             elif o.type == Order.Ordertype.OS:
 
                 order_depth += 1
-                last_order = 'SELL'
+                last_order = 'OS'
 
                 # cancel opening buy, no longer required.
 
@@ -204,7 +204,7 @@ def order_event_handler(price):
                 elif last_order == 'SELL':
                     order_depth -= 1
 
-                last_order = 'BUY'
+                last_order = 'BDI'
 
                 # place buy down interval order
 
@@ -222,12 +222,12 @@ def order_event_handler(price):
 
             elif o.type == Order.Ordertype.SDI:
 
-                if last_order == 'SELL':
+                if last_order == 'OS' or last_order == 'SDI' or last_order == 'SPI':
                     order_depth += 1
-                elif last_order == 'BUY':
+                if last_order == 'OB' or last_order == 'BDI' or last_order == 'BPI':
                     order_depth -= 1
 
-                last_order = 'SELL'
+                last_order = 'SDI'
 
                 # place sell down interval order
 
@@ -245,9 +245,13 @@ def order_event_handler(price):
 
             elif o.type == Order.Ordertype.BPI:
 
-                last_order = 'BUY'
+                if last_order == 'OS' or last_order == 'SPI':
 
-                if order_depth == 1:
+                    for oo in ob.orders[::-1]:
+
+                        if oo.type == Order.Ordertype.SDI:
+                            oo.cancel()
+                            break
 
                     # place buy down interval order
 
@@ -263,24 +267,34 @@ def order_event_handler(price):
 
                     get_orders()
 
-                elif order_depth > 1:
+                elif last_order == 'SDI':
 
                     # previous buy exists
 
                     # cancel outer SDI with SPI
 
-                    ob.orders[-1].cancel()
+                    for oo in ob.orders[::-1]:
+
+                        if oo.type == Order.Ordertype.SDI:
+                            oo.cancel()
+                            break
 
                     output_to_log("Cancelling outer SDI.")
-                    output_to_log("Placing SELL at profit interval.")
+                    output_to_log("Placing SDI+ at profit interval.")
 
-                    ob.add_order(Order.Order(Order.Ordertype.SPI, price - (price * profit_interval), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.SDI, price - (price * profit_interval), qty))
+
+                last_order = 'BPI'
 
             elif o.type == Order.Ordertype.SPI:
 
-                last_order = 'SELL'
+                if last_order == 'OB' or last_order == 'BPI':
 
-                if order_depth == 1:
+                    for oo in ob.orders[::-1]:
+
+                        if oo.type == Order.Ordertype.BDI:
+                            oo.cancel()
+                            break
 
                     # place sell down interval order
 
@@ -296,19 +310,24 @@ def order_event_handler(price):
 
                     get_orders()
 
-                elif order_depth > 1:
+                elif last_order == 'SDI':
 
                     # previous sell exists
 
                     # cancel outer BDI with BPI
 
-                    ob.orders[-1].cancel()
+                    for oo in ob.orders[::-1]:
+
+                        if oo.type == Order.Ordertype.BDI:
+                            oo.cancel()
+                            break
 
                     output_to_log("Cancelling outer BDI.")
-                    output_to_log("Placing BUY at profit interval.")
+                    output_to_log("Placing BDI+ at profit interval.")
 
-                    ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * profit_interval), qty))
 
+                last_order = 'SPI'
 
 def clean_order_book():
 
