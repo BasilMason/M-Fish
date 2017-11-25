@@ -28,7 +28,7 @@ class Order:
         self.price = price
         self.qty = qty
 
-        print(str(self))
+        #print(str(self))
 
     @property
     def status(self):
@@ -36,7 +36,7 @@ class Order:
 
     def open(self):
         self._status = OrderStatus.OPEN
-        print(str(self))
+        #print(str(self))
 
     def execute(self):
         self._status = OrderStatus.EXECUTED
@@ -111,4 +111,60 @@ class Orderbook:
 
         self.orders = [o for o in self.orders if not o.status == OrderStatus.EXECUTED]
 
+    def __str__(self):
 
+        s = "| TYPE\t\t| PRICE\t\t| QTY\t\t| STATUS\t|\n"
+        s += "-------------------------------------------------\n"
+
+        for o in self.orders:
+
+            s += "| %s\t\t| %s\t\t| %s\t\t| %s\t\t|\n" % (o.type.value, o.price, o.qty, o.status.value)
+
+        return s
+
+
+class Currency(Enum):
+    USD = 'USD'
+    BTC = 'BTC'
+    XRP = 'XRP'
+    LTC = 'LTC'
+    ETH = 'ETH'
+
+
+class Coin:
+
+    def __init__(self, currency, price):
+        self.currency = currency
+        self.price = price
+
+    def update(self, price):
+        self.price = price
+
+    def __str__(self):
+        return "%s : %s" % (self.currency.value, str(self.price))
+
+
+class Wallet:
+
+    def __init__(self):
+        self.wallet = {}
+
+    def add_coin(self, coin):
+        self.wallet[coin] = 0.00
+
+    def add_balance(self, coin, qty):
+        self.wallet[coin] += qty
+
+    def sub_balance(self, coin, qty):
+        self.wallet[coin] -= qty
+
+    def __str__(self):
+
+        s = "| COIN\t\t| QTY\t\t| PRICE\t\t\t| VALUE\t\t\t|\n"
+        s += "------------------------------------------------------\n"
+
+        for k, v in self.wallet.items():
+
+            s += "| %s\t\t| %s\t\t| %s\t\t| %s\t\t|\n" % (k.currency.value, str(v), k.price, v * k.price)
+
+        return s

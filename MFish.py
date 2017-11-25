@@ -14,7 +14,7 @@ fd = open(data_log,'w')
 # bot config
 pair = 'btcusd'
 scrum = 2
-qty = 1.0
+qty = 0.2
 depth = 5
 interval = 0.005
 buy_down_interval = 0.003
@@ -27,7 +27,18 @@ last_order = ''
 last_price = 0.00
 current_price = 0.00
 
+# wallet setup
+btc = Order.Coin(Order.Currency.BTC,8400.00)
+usd = Order.Coin(Order.Currency.USD,1.00)
+w = Order.Wallet()
+w.add_coin(btc)
+w.add_coin(usd)
+w.add_balance(btc, 1)
+w.add_balance(usd, 8400)
+
+# instantiate bitstamp service
 bitstamp = Bitstamp.BitstampService()
+
 
 def output_to_log(s):
     print(s)
@@ -95,10 +106,10 @@ def check_orders():
 
     log = ''
 
-    #output_to_log("Checking order statuses.")
-
     last_price = current_price
     current_price = bitstamp.get_price(pair)
+
+    btc.update(current_price)
 
     log += "%.4f" % current_price
     log += ','
@@ -133,8 +144,6 @@ def order_event_handler(price):
     global order_depth
     global last_order
 
-    #output_to_log("Handling order events.")
-
     for o in ob.orders:
 
         if o.status == Order.OrderStatus.EXECUTED:
@@ -143,6 +152,9 @@ def order_event_handler(price):
 
                 order_depth += 1
                 last_order = 'OB'
+
+                w.add_balance(btc, qty)
+                w.sub_balance(usd, qty * o.price)
 
                 # cancel opening sell, no longer required.
 
@@ -173,6 +185,9 @@ def order_event_handler(price):
                 order_depth += 1
                 last_order = 'OS'
 
+                w.sub_balance(btc, qty)
+                w.add_balance(usd, qty * o.price)
+
                 # cancel opening buy, no longer required.
 
                 output_to_log("Cancelling opening BUY, no longer required.")
@@ -199,6 +214,9 @@ def order_event_handler(price):
 
             elif o.type == Order.Ordertype.BDI:
 
+                w.add_balance(btc, qty)
+                w.sub_balance(usd, qty * o.price)
+
                 if last_order == 'BUY':
                     order_depth += 1
                 elif last_order == 'SELL':
@@ -222,6 +240,9 @@ def order_event_handler(price):
 
             elif o.type == Order.Ordertype.SDI:
 
+                w.sub_balance(btc, qty)
+                w.add_balance(usd, qty * o.price)
+
                 if last_order == 'OS' or last_order == 'SDI' or last_order == 'SPI':
                     order_depth += 1
                 if last_order == 'OB' or last_order == 'BDI' or last_order == 'BPI':
@@ -244,6 +265,9 @@ def order_event_handler(price):
                 get_orders()
 
             elif o.type == Order.Ordertype.BPI:
+
+                w.add_balance(btc, qty)
+                w.sub_balance(usd, qty * o.price)
 
                 if last_order == 'OS' or last_order == 'SPI':
 
@@ -287,6 +311,9 @@ def order_event_handler(price):
                 last_order = 'BPI'
 
             elif o.type == Order.Ordertype.SPI:
+
+                w.sub_balance(btc, qty)
+                w.add_balance(usd, qty * o.price)
 
                 if last_order == 'OB' or last_order == 'BPI':
 
@@ -339,8 +366,16 @@ def clean_order_book():
 output_to_log("Starting main processing...\n")
 get_orders()
 
+counter = 1
+
 while running:
+
+    counter += 1
 
     time.sleep(1)
     order_event_handler(check_orders())
     clean_order_book()
+
+    if counter % 10 == 0:
+        print(w)
+        print(ob)
