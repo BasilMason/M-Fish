@@ -36,6 +36,7 @@ w.add_balance(usd, 8400)
 # instantiate bitstamp service
 bitstamp = Bitstamp.BitstampService()
 
+
 def opening_orders():
 
     global ob
@@ -43,29 +44,41 @@ def opening_orders():
     global depth
     global scrum
 
+    bought_in = False
+
     l.log_action("Placing opening orders\n")
-    l.log_action("Bids:")
 
-    bids = bitstamp.get_bids(pair, depth)
-    for b in bids:
-        l.log_action("\t\tbids: %s, amount: %s" % (b[0], b[1]))
+    while not bought_in:
 
-    buy_price = float(bids[scrum][0])
-    buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
-    ob.add_order(buy_order)
+        time.sleep(1)
+        l.log_action("Bids:")
 
-    l.log_action("Asks:")
+        bids = bitstamp.get_bids(pair, depth)
+        for b in bids:
+            l.log_action("\t\tbids: %s, amount: %s" % (b[0], b[1]))
 
-    asks = bitstamp.get_asks(pair, depth)
-    for a in asks:
-        l.log_action("\t\tasks: %s, amount: %s" % (a[0], a[1]))
+        buy_price = float(bids[scrum][0])
 
-    sell_price = float(asks[scrum][0])
-    sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
-    ob.add_order(sell_order)
+        l.log_action("Asks:")
+
+        asks = bitstamp.get_asks(pair, depth)
+        for a in asks:
+            l.log_action("\t\tasks: %s, amount: %s" % (a[0], a[1]))
+
+        sell_price = float(asks[scrum][0])
+
+        l.log_action("Current: %.4f" % sell_price)
+
+        current_price = bitstamp.get_price(pair)
+
+        if current_price - buy_price > 5 and sell_price - current_price > 5:
+            buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
+            ob.add_order(buy_order)
+            sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
+            ob.add_order(sell_order)
+            bought_in = True
 
 opening_orders()
-
 
 def get_orders():
     for o in ob.orders:

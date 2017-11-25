@@ -151,6 +151,15 @@ class Wallet:
 
     def __init__(self):
         self.wallet = {}
+        #self.init_balances()
+
+    def init_balances(self):
+        btc = Order.Coin(Order.Currency.BTC, 8400.00)
+        usd = Order.Coin(Order.Currency.USD, 1.00)
+        self.add_coin(btc)
+        self.add_coin(usd)
+        self.add_balance(btc, 1)
+        self.add_balance(usd, 8400)
 
     def add_coin(self, coin):
         self.wallet[coin] = 0.00
