@@ -26,6 +26,7 @@ order_depth = 0
 last_order = ''
 last_price = 0.00
 current_price = 0.00
+parity_balance = 1.0
 
 # wallet setup
 btc = Order.Coin(Order.Currency.BTC,8400.00)
@@ -70,29 +71,35 @@ fd.write("%s\n" % intro)
 fd.write("Data Log generated on %s at %s\n" % (d,time.strftime('%H:%M:%S', time.localtime())))
 fd.close()
 
-# Stage 1 - opening orders
+def opening_orders():
 
-output_to_log("Placing opening orders\n")
-output_to_log("Bids:")
+    global ob
+    global pair
+    global depth
+    global scrum
 
-bids = bitstamp.get_bids(pair, depth)
-for b in bids:
-    output_to_log("\t\tbids: %s, amount: %s" % (b[0], b[1]))
+    output_to_log("Placing opening orders\n")
+    output_to_log("Bids:")
 
-buy_price = float(bids[scrum][0])
-buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
-ob.add_order(buy_order)
+    bids = bitstamp.get_bids(pair, depth)
+    for b in bids:
+        output_to_log("\t\tbids: %s, amount: %s" % (b[0], b[1]))
 
-output_to_log("Asks:")
+    buy_price = float(bids[scrum][0])
+    buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
+    ob.add_order(buy_order)
 
-asks = bitstamp.get_asks(pair, depth)
-for a in asks:
-    output_to_log("\t\tasks: %s, amount: %s" % (a[0], a[1]))
+    output_to_log("Asks:")
 
-sell_price = float(asks[scrum][0])
-sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
-ob.add_order(sell_order)
+    asks = bitstamp.get_asks(pair, depth)
+    for a in asks:
+        output_to_log("\t\tasks: %s, amount: %s" % (a[0], a[1]))
 
+    sell_price = float(asks[scrum][0])
+    sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
+    ob.add_order(sell_order)
+
+opening_orders()
 
 def get_orders():
     for o in ob.orders:
@@ -269,7 +276,11 @@ def order_event_handler(price):
                 w.add_balance(btc, qty)
                 w.sub_balance(usd, qty * o.price)
 
-                if last_order == 'OS' or last_order == 'SPI':
+                if w.get_balance(btc) == parity_balance:
+                    ob.cancel_all_orders()
+                    opening_orders()
+
+                elif last_order == 'OS' or last_order == 'SPI':
 
                     for oo in ob.orders[::-1]:
 
@@ -315,7 +326,11 @@ def order_event_handler(price):
                 w.sub_balance(btc, qty)
                 w.add_balance(usd, qty * o.price)
 
-                if last_order == 'OB' or last_order == 'BPI':
+                if w.get_balance(btc) == parity_balance:
+                    ob.cancel_all_orders()
+                    opening_orders()
+
+                elif last_order == 'OB' or last_order == 'BPI':
 
                     for oo in ob.orders[::-1]:
 
@@ -376,6 +391,6 @@ while running:
     order_event_handler(check_orders())
     clean_order_book()
 
-    if counter % 10 == 0:
+    if counter % 20 == 0:
         print(w)
         print(ob)

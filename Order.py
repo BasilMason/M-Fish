@@ -111,6 +111,9 @@ class Orderbook:
 
         self.orders = [o for o in self.orders if not o.status == OrderStatus.EXECUTED]
 
+    def cancel_all_orders(self):
+        self.orders = []
+
     def __str__(self):
 
         s = "| TYPE\t\t| PRICE\t\t| QTY\t\t| STATUS\t|\n"
@@ -157,6 +160,9 @@ class Wallet:
 
     def sub_balance(self, coin, qty):
         self.wallet[coin] -= qty
+
+    def get_balance(self, coin):
+        return self.wallet[coin]
 
     def __str__(self):
 

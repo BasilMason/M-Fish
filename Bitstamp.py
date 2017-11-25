@@ -26,9 +26,19 @@ class BitstampService:
         return resp['asks'][:depth]
 
     def get_price(self, pair):
-        url = self._url_price(pair)
-        resp = requests.get(url).json()
-        return float(resp['last'])
+
+        attempts = 3
+
+        while attempts > 0:
+
+            try:
+                url = self._url_price(pair)
+                resp = requests.get(url).json()
+                return float(resp['last'])
+            except ValueError:
+                pass
+
+        raise ValueError('JSON value error.')
 
 
 # authentication
