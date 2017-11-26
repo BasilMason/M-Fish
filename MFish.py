@@ -12,9 +12,8 @@ pair = 'btcusd'
 scrum = 2
 qty = 0.2
 depth = 5
-interval = 0.005
-buy_down_interval = 0.003
-profit_interval = 0.005
+buy_down_interval = 0.002
+profit_interval = 0.004
 straddle = profit_interval + buy_down_interval
 running = True
 ob = Order.Orderbook()
@@ -69,9 +68,9 @@ def opening_orders():
 
         l.log_action("Current: %.4f" % sell_price)
 
-        current_price = bitstamp.get_price(pair)
+        cur_price = bitstamp.get_price(pair)
 
-        if current_price - buy_price > 5 and sell_price - current_price > 5:
+        if cur_price - buy_price > 5 and sell_price - cur_price > 5:
             buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
             ob.add_order(buy_order)
             sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
@@ -79,6 +78,7 @@ def opening_orders():
             bought_in = True
 
 opening_orders()
+
 
 def get_orders():
     for o in ob.orders:
@@ -297,7 +297,7 @@ def order_event_handler(price):
                     l.log_action("Cancelling outer SDI.")
                     l.log_action("Placing SDI+ at profit interval.")
 
-                    ob.add_order(Order.Order(Order.Ordertype.SDI, price - (price * profit_interval), qty))
+                    ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * profit_interval), qty))
 
                 last_order = 'BPI'
 
@@ -355,6 +355,7 @@ def order_event_handler(price):
                     ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * profit_interval), qty))
 
                 last_order = 'SPI'
+
 
 def clean_order_book():
 
