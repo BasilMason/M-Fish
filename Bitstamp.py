@@ -6,7 +6,10 @@ import settings
 
 import requests
 
-
+# TimeoutError
+# urllib3.exceptions.NewConnectionError
+# urllib3.exceptions.MaxRetryError
+# requests.exceptions.ConnectionError
 
 class BitstampService:
     def _url_order_book(self, pair):
@@ -35,8 +38,10 @@ class BitstampService:
                 url = self._url_price(pair)
                 resp = requests.get(url).json()
                 return float(resp['last'])
-            except ValueError:
+            except ValueError:      # parent of JSONDecodeError
                 pass
+            except TimeoutError:
+                time.sleep(5)
 
         raise ValueError('JSON value error.')
 
