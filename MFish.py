@@ -279,7 +279,7 @@ def order_event_handler(price):
 
                     get_orders()
 
-                elif last_order == 'SDI':
+                elif last_order == 'SDI' or last_order == 'BPI':
 
                     order_depth -= 1
 
@@ -334,7 +334,7 @@ def order_event_handler(price):
 
                     get_orders()
 
-                elif last_order == 'SDI':
+                elif last_order == 'BDI' or last_order == 'SPI':
 
                     order_depth -= 1
 
