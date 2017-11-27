@@ -1,5 +1,4 @@
 import time
-import datetime
 import Bitstamp
 import Botlog
 import Order
