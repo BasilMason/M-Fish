@@ -3,13 +3,12 @@ import hashlib
 import time
 
 import settings
+import urllib3.exceptions
+import requests.exceptions
+import ssl
 
 import requests
 
-# TimeoutError
-# urllib3.exceptions.NewConnectionError
-# urllib3.exceptions.MaxRetryError
-# requests.exceptions.ConnectionError
 
 class BitstampService:
     def _url_order_book(self, pair):
@@ -41,6 +40,16 @@ class BitstampService:
             except ValueError:      # parent of JSONDecodeError
                 pass
             except TimeoutError:
+                time.sleep(5)
+            except urllib3.exceptions.NewConnectionError:
+                time.sleep(5)
+            except urllib3.exceptions.MaxRetryError:
+                time.sleep(5)
+            except requests.exceptions.ConnectionError:
+                time.sleep(5)
+            except ssl.SSLEOFError:
+                time.sleep(5)
+            except requests.exceptions.SSLError:
                 time.sleep(5)
 
         raise ValueError('JSON value error.')
