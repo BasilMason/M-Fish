@@ -42,3 +42,17 @@ class Botlog:
         f = open(self.data_log, 'a')
         f.write("%s\n" % s)
         f.close()
+
+
+import logging
+
+
+log = logging.getLogger(__name__)
+
+
+class BasicLog:
+    def log_action(self, s):
+        print(s)
+
+    def log_data(self, s):
+        print(s)
