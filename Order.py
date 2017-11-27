@@ -161,17 +161,20 @@ class Wallet:
         self.add_balance(btc, 1)
         self.add_balance(usd, 8400)
 
+    def set_price_usd(self, coin, price):
+        self.wallet[coin][0].update(price)
+
     def add_coin(self, coin):
-        self.wallet[coin] = 0.00
+        self.wallet[coin] = [Coin(coin, 0.0), 0.00]
 
     def add_balance(self, coin, qty):
-        self.wallet[coin] += qty
+        self.wallet[coin][1] += qty
 
     def sub_balance(self, coin, qty):
-        self.wallet[coin] -= qty
+        self.wallet[coin][1] -= qty
 
     def get_balance(self, coin):
-        return self.wallet[coin]
+        return self.wallet[coin][1]
 
     def __str__(self):
 
@@ -180,6 +183,6 @@ class Wallet:
 
         for k, v in self.wallet.items():
 
-            s += "| %s\t\t| %s\t\t| %s\t\t| %s\t\t|\n" % (k.currency.value, str(v), k.price, v * k.price)
+            s += "| %s\t\t| %s\t\t| %s\t\t| %s\t\t|\n" % (k.value, str(v[1]), v[0].price, v[1] * v[0].price)
 
         return s

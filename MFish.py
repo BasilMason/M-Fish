@@ -11,13 +11,14 @@ if __name__ == '__main__':
     # logger = Botlog.BasicLog()
 
     # wallet setup
-    btc = Order.Coin(Order.Currency.BTC, 8400.00)
-    usd = Order.Coin(Order.Currency.USD, 1.00)
+
     wallet = Order.Wallet()
-    wallet.add_coin(btc)
-    wallet.add_coin(usd)
-    wallet.add_balance(btc, 1)
-    wallet.add_balance(usd, 8400)
+    wallet.add_coin(Order.Currency.BTC)
+    wallet.add_coin(Order.Currency.USD)
+    wallet.set_price_usd(Order.Currency.BTC, 8400)
+    wallet.set_price_usd(Order.Currency.USD, 1)
+    wallet.add_balance(Order.Currency.BTC, 1)
+    wallet.add_balance(Order.Currency.USD, 8400)
 
 
     # instantiate bitstamp service
@@ -288,13 +289,10 @@ if __name__ == '__main__':
 
 #                     for oo in ob.orders[::-1]:
 
-<<<<<<< HEAD
-                elif last_order == 'SDI' or last_order == 'BPI':
-=======
+#                 elif last_order == 'SDI' or last_order == 'BPI':
 #                         if oo.type == Order.Ordertype.SDI:
 #                             oo.cancel()
 #                             break
->>>>>>> Use Strategy
 
 #                     # place buy down interval order
 
@@ -347,13 +345,10 @@ if __name__ == '__main__':
 
 #                     for oo in ob.orders[::-1]:
 
-<<<<<<< HEAD
-                elif last_order == 'BDI' or last_order == 'SPI':
-=======
+#                 elif last_order == 'BDI' or last_order == 'SPI':
 #                         if oo.type == Order.Ordertype.BDI:
 #                             oo.cancel()
 #                             break
->>>>>>> Use Strategy
 
 #                     # place sell down interval order
 
