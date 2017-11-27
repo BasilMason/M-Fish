@@ -2,380 +2,415 @@ import time
 import Bitstamp
 import Botlog
 import Order
+import Strategy
 
-# setup output file
-l = Botlog.Botlog()
 
-# bot config
-pair = 'btcusd'
-scrum = 2
-qty = 0.2
-depth = 5
-buy_down_interval = 0.002
-profit_interval = 0.004
-straddle = profit_interval + buy_down_interval
-running = True
-ob = Order.Orderbook()
-order_depth = 0
-last_order = ''
-last_price = 0.00
-current_price = 0.00
-parity_balance = 1.0
+if __name__ == '__main__':
+    # setup output file
+    logger = Botlog.Botlog()
+    # logger = Botlog.BasicLog()
 
-# wallet setup
-btc = Order.Coin(Order.Currency.BTC, 8400.00)
-usd = Order.Coin(Order.Currency.USD, 1.00)
-w = Order.Wallet()
-w.add_coin(btc)
-w.add_coin(usd)
-w.add_balance(btc, 1)
-w.add_balance(usd, 8400)
+    # wallet setup
+    btc = Order.Coin(Order.Currency.BTC, 8400.00)
+    usd = Order.Coin(Order.Currency.USD, 1.00)
+    wallet = Order.Wallet()
+    wallet.add_coin(btc)
+    wallet.add_coin(usd)
+    wallet.add_balance(btc, 1)
+    wallet.add_balance(usd, 8400)
 
-# instantiate bitstamp service
-bitstamp = Bitstamp.BitstampService()
 
+    # instantiate bitstamp service
+    bitstamp_service = Bitstamp.BitstampService()
+    order_book = Order.Orderbook()
 
-def opening_orders():
+    pair = 'btcusd'
 
-    global ob
-    global pair
-    global depth
-    global scrum
+    strategy = Strategy.BitstampMarketMaker(bitstamp_service, order_book, wallet, pair, logger)
+    strategy.execute()
 
-    bought_in = False
 
-    l.log_action("Placing opening orders\n")
+# # setup output file
+# l = Botlog.Botlog()
 
-    while not bought_in:
+# # bot config
+# pair = 'btcusd'
+# scrum = 2
+# qty = 0.2
+# depth = 5
+# buy_down_interval = 0.002
+# profit_interval = 0.004
+# straddle = profit_interval + buy_down_interval
+# running = True
+# ob = Order.Orderbook()
+# order_depth = 0
+# last_order = ''
+# last_price = 0.00
+# current_price = 0.00
+# parity_balance = 1.0
 
-        time.sleep(1)
-        l.log_action("Bids:")
+# # wallet setup
+# btc = Order.Coin(Order.Currency.BTC, 8400.00)
+# usd = Order.Coin(Order.Currency.USD, 1.00)
+# w = Order.Wallet()
+# w.add_coin(btc)
+# w.add_coin(usd)
+# w.add_balance(btc, 1)
+# w.add_balance(usd, 8400)
 
-        bids = bitstamp.get_bids(pair, depth)
-        for b in bids:
-            l.log_action("\t\tbids: %s, amount: %s" % (b[0], b[1]))
+# # instantiate bitstamp service
+# bitstamp = Bitstamp.BitstampService()
 
-        buy_price = float(bids[scrum][0])
 
-        l.log_action("Asks:")
+# def opening_orders():
 
-        asks = bitstamp.get_asks(pair, depth)
-        for a in asks:
-            l.log_action("\t\tasks: %s, amount: %s" % (a[0], a[1]))
+#     global ob
+#     global pair
+#     global depth
+#     global scrum
 
-        sell_price = float(asks[scrum][0])
+#     bought_in = False
 
-        l.log_action("Current: %.4f" % sell_price)
+#     l.log_action("Placing opening orders\n")
 
-        cur_price = bitstamp.get_price(pair)
+#     while not bought_in:
 
-        if cur_price - buy_price > 5 and sell_price - cur_price > 5:
-            buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
-            ob.add_order(buy_order)
-            sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
-            ob.add_order(sell_order)
-            bought_in = True
+#         time.sleep(1)
+#         l.log_action("Bids:")
 
-opening_orders()
+#         bids = bitstamp.get_bids(pair, depth)
+#         for b in bids:
+#             l.log_action("\t\tbids: %s, amount: %s" % (b[0], b[1]))
 
+#         buy_price = float(bids[scrum][0])
 
-def get_orders():
-    for o in ob.orders:
-        l.log_action(o)
+#         l.log_action("Asks:")
 
+#         asks = bitstamp.get_asks(pair, depth)
+#         for a in asks:
+#             l.log_action("\t\tasks: %s, amount: %s" % (a[0], a[1]))
 
-def check_orders():
+#         sell_price = float(asks[scrum][0])
 
-    global last_price
-    global current_price
+#         l.log_action("Current: %.4f" % sell_price)
 
-    log = ''
+#         cur_price = bitstamp.get_price(pair)
 
-    last_price = current_price
-    current_price = bitstamp.get_price(pair)
+#         if cur_price - buy_price > 5 and sell_price - cur_price > 5:
+#             buy_order = Order.Order(Order.Ordertype.OB, buy_price, qty)
+#             ob.add_order(buy_order)
+#             sell_order = Order.Order(Order.Ordertype.OS, sell_price, qty)
+#             ob.add_order(sell_order)
+#             bought_in = True
 
-    btc.update(current_price)
+# opening_orders()
 
-    log += "%.4f" % current_price
-    log += ','
 
-    if current_price != last_price:
-        l.log_action("Current price:\t%.4f" % current_price)
+# def get_orders():
+#     for o in ob.orders:
+#         l.log_action(o)
 
-    for o in ob.orders:
 
-        log += str(o.id)
-        log += ';'
-        log += "%.4f" % o.price
-        log += ','
+# def check_orders():
 
-        if o.type == Order.Ordertype.OB or o.type == Order.Ordertype.BDI or o.type == Order.Ordertype.BPI:
+#     global last_price
+#     global current_price
 
-            if current_price <= o.price:
-                o.execute()
+#     log = ''
 
-        elif o.type == Order.Ordertype.OS or o.type == Order.Ordertype.SDI or o.type == Order.Ordertype.SPI:
+#     last_price = current_price
+#     current_price = bitstamp.get_price(pair)
 
-            if current_price >= o.price:
-                o.execute()
+#     btc.update(current_price)
 
-    l.log_data(log)
+#     log += "%.4f" % current_price
+#     log += ','
 
-    return current_price
+#     if current_price != last_price:
+#         l.log_action("Current price:\t%.4f" % current_price)
 
+#     for o in ob.orders:
 
-def order_event_handler(price):
+#         log += str(o.id)
+#         log += ';'
+#         log += "%.4f" % o.price
+#         log += ','
 
-    global order_depth
-    global last_order
+#         if o.type == Order.Ordertype.OB or o.type == Order.Ordertype.BDI or o.type == Order.Ordertype.BPI:
 
-    for o in ob.orders:
+#             if current_price <= o.price:
+#                 o.execute()
 
-        if o.status == Order.OrderStatus.EXECUTED:
+#         elif o.type == Order.Ordertype.OS or o.type == Order.Ordertype.SDI or o.type == Order.Ordertype.SPI:
 
-            if o.type == Order.Ordertype.OB:
+#             if current_price >= o.price:
+#                 o.execute()
 
-                order_depth += 1
-                last_order = 'OB'
+#     l.log_data(log)
 
-                w.add_balance(btc, qty)
-                w.sub_balance(usd, qty * o.price)
+#     return current_price
 
-                # cancel opening sell, no longer required.
 
-                l.log_action("Cancelling opening SELL, no longer required.")
+# def order_event_handler(price):
 
-                for oo in ob.orders:
+#     global order_depth
+#     global last_order
 
-                    if oo.type == Order.Ordertype.OS:
+#     for o in ob.orders:
 
-                        oo.cancel()
+#         if o.status == Order.OrderStatus.EXECUTED:
 
-                # place buy down interval order
+#             if o.type == Order.Ordertype.OB:
 
-                l.log_action("Placing BUY at down interval.")
+#                 order_depth += 1
+#                 last_order = 'OB'
 
-                ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
+#                 w.add_balance(btc, qty)
+#                 w.sub_balance(usd, qty * o.price)
 
-                # place sell at profit interval
+#                 # cancel opening sell, no longer required.
 
-                l.log_action("Placing SELL at profit interval.")
+#                 l.log_action("Cancelling opening SELL, no longer required.")
 
-                ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
+#                 for oo in ob.orders:
 
-                get_orders()
+#                     if oo.type == Order.Ordertype.OS:
 
-            elif o.type == Order.Ordertype.OS:
+#                         oo.cancel()
 
-                order_depth += 1
-                last_order = 'OS'
+#                 # place buy down interval order
 
-                w.sub_balance(btc, qty)
-                w.add_balance(usd, qty * o.price)
+#                 l.log_action("Placing BUY at down interval.")
 
-                # cancel opening buy, no longer required.
+#                 ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
-                l.log_action("Cancelling opening BUY, no longer required.")
+#                 # place sell at profit interval
 
-                for oo in ob.orders:
+#                 l.log_action("Placing SELL at profit interval.")
 
-                    if oo.type == Order.Ordertype.OB:
+#                 ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
 
-                        oo.cancel()
+#                 get_orders()
 
-                # place sell down interval order
+#             elif o.type == Order.Ordertype.OS:
 
-                l.log_action("Placing SELL at down interval.")
+#                 order_depth += 1
+#                 last_order = 'OS'
 
-                ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
+#                 w.sub_balance(btc, qty)
+#                 w.add_balance(usd, qty * o.price)
 
-                # place buy at profit interval
+#                 # cancel opening buy, no longer required.
 
-                l.log_action("Placing BUY at profit interval.")
+#                 l.log_action("Cancelling opening BUY, no longer required.")
 
-                ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
+#                 for oo in ob.orders:
 
-                get_orders()
+#                     if oo.type == Order.Ordertype.OB:
 
-            elif o.type == Order.Ordertype.BDI:
+#                         oo.cancel()
 
-                w.add_balance(btc, qty)
-                w.sub_balance(usd, qty * o.price)
+#                 # place sell down interval order
 
-                order_depth += 1
+#                 l.log_action("Placing SELL at down interval.")
 
-                last_order = 'BDI'
+#                 ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
-                # place buy down interval order
+#                 # place buy at profit interval
 
-                l.log_action("Placing BUY at down interval.")
+#                 l.log_action("Placing BUY at profit interval.")
 
-                ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
+#                 ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
-                # place sell at profit interval
+#                 get_orders()
 
-                l.log_action("Placing SELL at profit interval.")
+#             elif o.type == Order.Ordertype.BDI:
 
-                ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
+#                 w.add_balance(btc, qty)
+#                 w.sub_balance(usd, qty * o.price)
 
-                get_orders()
+#                 order_depth += 1
 
-            elif o.type == Order.Ordertype.SDI:
+#                 last_order = 'BDI'
 
-                w.sub_balance(btc, qty)
-                w.add_balance(usd, qty * o.price)
+#                 # place buy down interval order
 
-                order_depth += 1
+#                 l.log_action("Placing BUY at down interval.")
 
-                last_order = 'SDI'
+#                 ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
-                # place sell down interval order
+#                 # place sell at profit interval
 
-                l.log_action("Placing SELL at down interval.")
+#                 l.log_action("Placing SELL at profit interval.")
 
-                ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
+#                 ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
 
-                # place buy at profit interval
+#                 get_orders()
 
-                l.log_action("Placing BUY at profit interval.")
+#             elif o.type == Order.Ordertype.SDI:
 
-                ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
+#                 w.sub_balance(btc, qty)
+#                 w.add_balance(usd, qty * o.price)
 
-                get_orders()
+#                 order_depth += 1
 
-            elif o.type == Order.Ordertype.BPI:
+#                 last_order = 'SDI'
 
-                w.add_balance(btc, qty)
-                w.sub_balance(usd, qty * o.price)
+#                 # place sell down interval order
 
-                if w.get_balance(btc) == parity_balance:
-                    order_depth = 0
-                    ob.cancel_all_orders()
-                    opening_orders()
+#                 l.log_action("Placing SELL at down interval.")
 
-                elif last_order == 'OS' or last_order == 'SPI':
+#                 ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
-                    # redundant? vs. parity reset?
+#                 # place buy at profit interval
 
-                    order_depth -= 1
+#                 l.log_action("Placing BUY at profit interval.")
 
-                    for oo in ob.orders[::-1]:
+#                 ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
-                        if oo.type == Order.Ordertype.SDI:
-                            oo.cancel()
-                            break
+#                 get_orders()
 
-                    # place buy down interval order
+#             elif o.type == Order.Ordertype.BPI:
 
-                    l.log_action("Placing BUY at down interval.")
+#                 w.add_balance(btc, qty)
+#                 w.sub_balance(usd, qty * o.price)
 
-                    ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
+#                 if w.get_balance(btc) == parity_balance:
+#                     order_depth = 0
+#                     ob.cancel_all_orders()
+#                     opening_orders()
 
-                    # place sell at profit interval
+#                 elif last_order == 'OS' or last_order == 'SPI':
 
-                    l.log_action("Placing SELL at profit interval.")
+#                     # redundant? vs. parity reset?
 
-                    ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
+#                     order_depth -= 1
 
-                    get_orders()
+#                     for oo in ob.orders[::-1]:
 
+<<<<<<< HEAD
                 elif last_order == 'SDI' or last_order == 'BPI':
+=======
+#                         if oo.type == Order.Ordertype.SDI:
+#                             oo.cancel()
+#                             break
+>>>>>>> Use Strategy
 
-                    order_depth -= 1
+#                     # place buy down interval order
 
-                    # previous buy exists
+#                     l.log_action("Placing BUY at down interval.")
 
-                    # cancel outer SDI with SPI
+#                     ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * (buy_down_interval * order_depth)), qty))
 
-                    for oo in ob.orders[::-1]:
+#                     # place sell at profit interval
 
-                        if oo.type == Order.Ordertype.SDI:
-                            oo.cancel()
-                            break
+#                     l.log_action("Placing SELL at profit interval.")
 
-                    l.log_action("Cancelling outer SDI.")
-                    l.log_action("Placing SDI+ at profit interval.")
+#                     ob.add_order(Order.Order(Order.Ordertype.SPI, price + (price * profit_interval), qty))
 
-                    ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * profit_interval), qty))
+#                     get_orders()
 
-                last_order = 'BPI'
+#                 elif last_order == 'SDI':
 
-            elif o.type == Order.Ordertype.SPI:
+#                     order_depth -= 1
 
-                w.sub_balance(btc, qty)
-                w.add_balance(usd, qty * o.price)
+#                     # previous buy exists
 
-                if w.get_balance(btc) == parity_balance:
-                    order_depth = 0
-                    ob.cancel_all_orders()
-                    opening_orders()
+#                     # cancel outer SDI with SPI
 
-                elif last_order == 'OB' or last_order == 'BPI':
+#                     for oo in ob.orders[::-1]:
 
-                    order_depth -= 1
+#                         if oo.type == Order.Ordertype.SDI:
+#                             oo.cancel()
+#                             break
 
-                    for oo in ob.orders[::-1]:
+#                     l.log_action("Cancelling outer SDI.")
+#                     l.log_action("Placing SDI+ at profit interval.")
 
-                        if oo.type == Order.Ordertype.BDI:
-                            oo.cancel()
-                            break
+#                     ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * profit_interval), qty))
 
-                    # place sell down interval order
+#                 last_order = 'BPI'
 
-                    l.log_action("Placing SELL at down interval.")
+#             elif o.type == Order.Ordertype.SPI:
 
-                    ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
+#                 w.sub_balance(btc, qty)
+#                 w.add_balance(usd, qty * o.price)
 
-                    # place buy at profit interval
+#                 if w.get_balance(btc) == parity_balance:
+#                     order_depth = 0
+#                     ob.cancel_all_orders()
+#                     opening_orders()
 
-                    l.log_action("Placing BUY at profit interval.")
+#                 elif last_order == 'OB' or last_order == 'BPI':
 
-                    ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
+#                     order_depth -= 1
 
-                    get_orders()
+#                     for oo in ob.orders[::-1]:
 
+<<<<<<< HEAD
                 elif last_order == 'BDI' or last_order == 'SPI':
+=======
+#                         if oo.type == Order.Ordertype.BDI:
+#                             oo.cancel()
+#                             break
+>>>>>>> Use Strategy
 
-                    order_depth -= 1
+#                     # place sell down interval order
 
-                    # previous sell exists
+#                     l.log_action("Placing SELL at down interval.")
 
-                    # cancel outer BDI with BPI
+#                     ob.add_order(Order.Order(Order.Ordertype.SDI, price + (price * (buy_down_interval * order_depth)), qty))
 
-                    for oo in ob.orders[::-1]:
+#                     # place buy at profit interval
 
-                        if oo.type == Order.Ordertype.BDI:
-                            oo.cancel()
-                            break
+#                     l.log_action("Placing BUY at profit interval.")
 
-                    l.log_action("Cancelling outer BDI.")
-                    l.log_action("Placing BDI+ at profit interval.")
+#                     ob.add_order(Order.Order(Order.Ordertype.BPI, price - (price * profit_interval), qty))
 
-                    ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * profit_interval), qty))
+#                     get_orders()
 
-                last_order = 'SPI'
+#                 elif last_order == 'SDI':
+
+#                     order_depth -= 1
+
+#                     # previous sell exists
+
+#                     # cancel outer BDI with BPI
+
+#                     for oo in ob.orders[::-1]:
+
+#                         if oo.type == Order.Ordertype.BDI:
+#                             oo.cancel()
+#                             break
+
+#                     l.log_action("Cancelling outer BDI.")
+#                     l.log_action("Placing BDI+ at profit interval.")
+
+#                     ob.add_order(Order.Order(Order.Ordertype.BDI, price - (price * profit_interval), qty))
+
+#                 last_order = 'SPI'
 
 
-def clean_order_book():
+# def clean_order_book():
 
-    ob.remove_cancelled_orders()
-    ob.remove_executed_orders()
+#     ob.remove_cancelled_orders()
+#     ob.remove_executed_orders()
 
-# Stage 2 - main loop
+# # Stage 2 - main loop
 
-l.log_action("Starting main processing...\n")
-get_orders()
+# l.log_action("Starting main processing...\n")
+# get_orders()
 
-counter = 1
+# counter = 1
 
-while running:
+# while running:
 
-    counter += 1
+#     counter += 1
 
-    time.sleep(1)
-    order_event_handler(check_orders())
-    clean_order_book()
+#     time.sleep(1)
+#     order_event_handler(check_orders())
+#     clean_order_book()
 
-    if counter % 20 == 0:
-        print(w)
-        print(ob)
+#     if counter % 20 == 0:
+#         print(w)
+#         print(ob)

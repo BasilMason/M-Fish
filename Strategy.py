@@ -1,3 +1,10 @@
+import time
+import datetime
+import Bitstamp
+import Botlog
+import Order
+
+
 class BitstampStrategy:
     def __init__(self, service, order_book, wallet, pair, logger):
         raise NotImplementedError
@@ -139,7 +146,7 @@ class BitstampMarketMaker:
 
                     self._logger.log_action("Cancelling opening BUY, no longer required.")
 
-                    for sub_order in ob.orders:
+                    for sub_order in self._order_book.orders:
 
                         if sub_order.type == Order.Ordertype.OB:
 
@@ -389,7 +396,7 @@ class BitstampMarketMaker:
 
             self._logger.log_action("Current: %.4f" % sell_price)
 
-            cur_price = self._service.get_price(pair)
+            cur_price = self._service.get_price(self._pair)
 
             if cur_price - buy_price > 5 and sell_price - cur_price > 5:
                 buy_order = Order.Order(Order.Ordertype.OB, buy_price, self._qty)
