@@ -29,6 +29,11 @@ class BitstampMarketMaker:
         self._order_depth = 0
         self._last_order = ''
         self._qty = 0.2
+        self._buy_down_interval = 0.002
+        self._profit_interval = 0.004
+        self._straddle = self._buy_down_interval + self._profit_interval
+        self._parity_balance = 1.0
+
 
     def execute(self):
         self._logger.log_action("Starting main processing...\n")
@@ -63,7 +68,7 @@ class BitstampMarketMaker:
         self._last_price = self._current_price
         self._current_price = self._service.get_price(self._pair)
 
-        btc.update(self._current_price)  # TODO: fix this abstraction
+        self._wallet.set_price_usd(Order.Currency.BTC, self._current_price)
 
         log += "%.4f" % self._current_price
         log += ','
@@ -102,8 +107,8 @@ class BitstampMarketMaker:
                     self._order_depth += 1
                     self._last_order = 'OB'  # TODO: use enums
 
-                    self._wallet.add_balance(btc, self._qty)  # TODO: also enums?
-                    self._wallet.sub_balance(usd, self._qty * order.price)
+                    self._wallet.add_balance(Order.Currency.BTC, self._qty)  # TODO: also enums?
+                    self._wallet.sub_balance(Order.Currency.USD, self._qty * order.price)
 
                     # cancel opening sell, no longer required.
 
@@ -120,7 +125,7 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.BDI,
-                            price - (price * (buy_down_interval * self._order_depth)),
+                            price - (price * (self._buy_down_interval * self._order_depth)),
                             self._qty))
 
                     # place buy at profit interval
@@ -130,7 +135,7 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.BDI,
-                            price - (price * (buy_down_interval * self._order_depth)),
+                            price - (price * (self._buy_down_interval * self._order_depth)),
                             self._qty))
 
                     self._get_orders()
@@ -139,8 +144,8 @@ class BitstampMarketMaker:
                     self._order_depth += 1
                     self._last_order = 'OS'
 
-                    self._wallet.sub_balance(btc, self._qty)
-                    self._wallet.add_balance(usd, self._qty * order.price)
+                    self._wallet.sub_balance(Order.Currency.BTC, self._qty)
+                    self._wallet.add_balance(Order.Currency.USD, self._qty * order.price)
 
                     # cancel opening buy, no longer required.
 
@@ -159,7 +164,7 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.SDI,
-                            price + (price * (buy_down_interval * self._order_depth)),
+                            price + (price * (self._buy_down_interval * self._order_depth)),
                             self._qty))
 
                     # place buy at profit interval
@@ -169,14 +174,14 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.BPI,
-                            price - (price * profit_interval),
+                            price - (price * self._profit_interval),
                             self._qty))
 
                     self._get_orders()
 
                 elif order.type == Order.Ordertype.BDI:
-                    self._wallet.add_balance(btc, self._qty)
-                    self._wallet.sub_balance(usd, self._qty * order.price)
+                    self._wallet.add_balance(Order.Currency.BTC, self._qty)
+                    self._wallet.sub_balance(Order.Currency.USD, self._qty * order.price)
 
                     self._order_depth += 1
 
@@ -189,7 +194,7 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.BDI,
-                            price - (price * (buy_down_interval * order_depth)),
+                            price - (price * (self._buy_down_interval * self._order_depth)),
                             self._qty))
 
                     # place sell at profit interval
@@ -199,14 +204,14 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.SPI,
-                            price + (price * profit_interval),
+                            price + (price * self._profit_interval),
                             self._qty))
 
                     self._get_orders()
 
                 elif order.type == Order.Ordertype.SDI:
-                    self._wallet.sub_balance(btc, self._qty)
-                    self._wallet.add_balance(usd, self._qty * order.price)
+                    self._wallet.sub_balance(Order.Currency.BTC, self._qty)
+                    self._wallet.add_balance(Order.Currency.USD, self._qty * order.price)
 
                     self._order_depth += 1
 
@@ -219,7 +224,7 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.SDI,
-                            price + (price * (buy_down_interval * self._order_depth)),
+                            price + (price * (self._buy_down_interval * self._order_depth)),
                             self._qty))
 
                     # place buy at profit interval
@@ -229,17 +234,17 @@ class BitstampMarketMaker:
                     self._order_book.add_order(
                         Order.Order(
                             Order.Ordertype.BPI,
-                            price - (price * profit_interval),
+                            price - (price * self._profit_interval),
                             self._qty))
 
                     self._get_orders()
 
                 elif order.type == Order.Ordertype.BPI:
 
-                    self._wallet.add_balance(btc, self._qty)
-                    self._wallet.sub_balance(usd, self._qty * order.price)
+                    self._wallet.add_balance(Order.Currency.BTC, self._qty)
+                    self._wallet.sub_balance(Order.Currency.USD, self._qty * order.price)
 
-                    if self._wallet.get_balance(btc) == parity_balance:
+                    if self._wallet.get_balance(Order.Currency.BTC) == self._parity_balance:
                         self._order_depth = 0
                         self._order_book.cancel_all_orders()
                         self._opening_orders()
@@ -263,7 +268,7 @@ class BitstampMarketMaker:
                         self._order_book.add_order(
                             Order.Order(
                                 Order.Ordertype.BDI,
-                                price - (price * (buy_down_interval * order_depth)),
+                                price - (price * (self._buy_down_interval * self._order_depth)),
                                 self._qty))
 
                         # place sell at profit interval
@@ -273,12 +278,12 @@ class BitstampMarketMaker:
                         self._order_book.add_order(
                             Order.Order(
                                 Order.Ordertype.SPI,
-                                price + (price * profit_interval),
+                                price + (price * self._profit_interval),
                                 self._qty))
 
                         self._get_orders()
 
-                    elif last_order == 'SDI':
+                    elif self._last_order in {'SDI', 'BPI'}:
 
                         self._order_depth -= 1
 
@@ -298,17 +303,17 @@ class BitstampMarketMaker:
                         self._order_book.add_order(
                             Order.Order(
                                 Order.Ordertype.SDI,
-                                price + (price * profit_interval),
+                                price + (price * self._profit_interval),
                                 self._qty))
 
                     self._last_order = 'BPI'
 
                 elif order.type == Order.Ordertype.SPI:
 
-                    self._wallet.sub_balance(btc, self._qty)
-                    self._wallet.add_balance(usd, self._qty * order.price)
+                    self._wallet.sub_balance(Order.Currency.BTC, self._qty)
+                    self._wallet.add_balance(Order.Currency.USD, self._qty * order.price)
 
-                    if self._wallet.get_balance(btc) == parity_balance:
+                    if self._wallet.get_balance(Order.Currency.BTC) == self._parity_balance:
                         self._order_depth = 0
                         self._order_book.cancel_all_orders()
                         self._opening_orders()
@@ -330,7 +335,7 @@ class BitstampMarketMaker:
                         self._order_book.add_order(
                             Order.Order(
                                 Order.Ordertype.SDI,
-                                price + (price * (buy_down_interval * order_depth)),
+                                price + (price * (self._buy_down_interval * self._order_depth)),
                                 self._qty))
 
                         # place buy at profit interval
@@ -340,12 +345,12 @@ class BitstampMarketMaker:
                         self._order_book.add_order(
                             Order.Order(
                                 Order.Ordertype.BPI,
-                                price - (price * profit_interval),
+                                price - (price * self._profit_interval),
                                 self._qty))
 
                         self._get_orders()
 
-                    elif self._last_order == 'SDI':
+                    elif self._last_order in {'SDI', 'SPI'}:
 
                         self._order_depth -= 1
 
@@ -365,7 +370,7 @@ class BitstampMarketMaker:
                         self._order_book.add_order(
                             Order.Order(
                                 Order.Ordertype.BDI,
-                                price - (price * profit_interval),
+                                price - (price * self._profit_interval),
                                 self._qty))
 
                     self._last_order = 'SPI'
