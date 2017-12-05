@@ -50,7 +50,7 @@ class BitstampMarketMaker:
                 print(self._wallet)
                 print(self._order_book)
 
-            time.sleep(1)
+            time.sleep(0.5)
             self._order_event_handler(self._check_orders())
             self._clean_order_book()
 
@@ -134,8 +134,8 @@ class BitstampMarketMaker:
 
                     self._order_book.add_order(
                         Order.Order(
-                            Order.Ordertype.BDI,
-                            price - (price * (self._buy_down_interval * self._order_depth)),
+                            Order.Ordertype.SPI,
+                            price + (price * self._profit_interval),
                             self._qty))
 
                     self._get_orders()
@@ -382,7 +382,7 @@ class BitstampMarketMaker:
 
         while not bought_in:
 
-            time.sleep(1)
+            time.sleep(0.5)
             self._logger.log_action("Bids:")
 
             bids = self._service.get_bids(self._pair, self._depth)
