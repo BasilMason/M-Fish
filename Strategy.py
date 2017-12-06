@@ -70,18 +70,10 @@ class BitstampMarketMaker:
 
         self._wallet.set_price_usd(Order.Currency.BTC, self._current_price)
 
-        log += "%.4f" % self._current_price
-        log += ','
-
-        if self._current_price != self._last_price:
-            self._logger.log_action("Current price:\t%.4f" % self._current_price)
+        #if self._current_price != self._last_price:
+        #    self._logger.log_action("Current price:\t%.4f" % self._current_price)
 
         for order in self._order_book.orders:
-
-            log += str(order.id)
-            log += ';'
-            log += "%.4f" % order.price
-            log += ','
 
             if order.type in {Order.Ordertype.OB, Order.Ordertype.BDI, Order.Ordertype.BPI}:
                 if self._current_price <= order.price:
@@ -91,10 +83,32 @@ class BitstampMarketMaker:
                 if self._current_price >= order.price:
                     order.execute()
 
+        # data log
+
+        log += "%.4f" % self._current_price
+        log += ','
+
+        max_oid = max([o.id for o in self._order_book.orders])
+
+        for x in range(1, max_oid + 1):
+            found = False
+            for o in self._order_book.orders:
+                if o.id == x:
+                    log += str(o.id)
+                    log += ';'
+                    log += "%.4f" % o.price
+                    log += ','
+                    found = True
+                    break
+
+            if not found:
+                log += str(x)
+                log += ';'
+                log += ','
+
         self._logger.log_data(log)
 
         return self._current_price
-
 
     def _clean_order_book(self):
         self._order_book.remove_cancelled_orders()
